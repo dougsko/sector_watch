@@ -46,7 +46,7 @@ top_three.each do |s|
 end
 
 puts "Comparing 3 Month Performance".yellow
-puts "Symbol\t% Change\t% of Total Top Three".blue
+puts "Symbol | % Change | % of Portfolio".blue
 puts "----------------------------------".blue
 stocks.each do |s|
     if i < 3
