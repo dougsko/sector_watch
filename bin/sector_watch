@@ -39,11 +39,18 @@ stock = SectorWatch::Stock.sma('SPY', 10)
 
 # print results
 i = 0
-puts "Symbol\t% Change".blue
-puts "----------------".blue
+total_percent = 0
+top_three = stocks.first(3)
+top_three.each do |s|
+    total_percent += s[:change].to_f
+end
+
+puts "Comparing 3 Month Performance".yellow
+puts "Symbol\t% Change\t% of Total Top Three".blue
+puts "----------------------------------".blue
 stocks.each do |s|
     if i < 3
-        puts "#{s[:symbol]}\t#{s[:change].to_f}%".green
+        puts "#{s[:symbol]}\t#{s[:change].to_f}%\t#{sprintf('%.2f', s[:change].to_f / total_percent * 100)}%".green
     else
         puts "#{s[:symbol]}\t#{s[:change].to_f}%"
     end

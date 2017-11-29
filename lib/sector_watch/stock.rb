@@ -57,7 +57,7 @@ module SectorWatch
             end
             sma = sprintf('%.2f', total / stock[:history].size).to_f
             if stock[:history].first[:close].to_f > sma
-                puts "10 month moving average".blue
+                puts "10 Month Moving Average".blue
                 puts "#{symbol} is trading above SMA! #{stock[:history].first[:close]} > #{sma}".green
             else
                 puts "#{symbol} is trading below SMA! #{sma}" > "#{stock[:history].first[:close]}".red
