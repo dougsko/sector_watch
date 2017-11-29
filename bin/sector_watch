@@ -1,0 +1,53 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "sector_watch"
+require 'date'
+require 'colorize'
+
+sectors = {'FTEC' => 'Information Technology',
+           'FNCL' => 'Financials',
+           'FHLC' => 'Health Care',
+           'FENY' => 'Energy',
+           'FREL' => 'Real Estate',
+           'FIDU' => 'Industrials',
+           'FUTY' => 'Utilities',
+           'FDIS' => 'Consumer Discretionary',
+           'FSTA' => 'Consumer Staples',
+           'FMAT' => 'Materials',
+           'FCOM' => 'Telecommunication'}
+
+
+start_date = Date.today.prev_month(3).strftime("%m-%d-%Y")
+end_date = Date.today.strftime("%m-%d-%Y")
+
+stocks = []
+sectors.each do |symbol, name|
+    stock = SectorWatch::Stock.quote(symbol, start_date, end_date, 'json')
+    stocks << stock
+end
+
+stocks.each do |stock|
+    change = SectorWatch::Stock.calc_change(stock)
+    stock[:change] = change
+end
+
+stocks.sort_by!{ |stock| stock[:change].to_f}.reverse!
+
+# find and print S&P 500 10 month simple moving average
+stock = SectorWatch::Stock.sma('SPY', 10)
+
+# print results
+i = 0
+puts "Symbol\t% Change".blue
+puts "----------------".blue
+stocks.each do |s|
+    if i < 3
+        puts "#{s[:symbol]}\t#{s[:change].to_f}%".green
+    else
+        puts "#{s[:symbol]}\t#{s[:change].to_f}%"
+    end
+    i += 1
+end
+
+
