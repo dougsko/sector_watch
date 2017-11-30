@@ -50,7 +50,7 @@ puts "Symbol | % Change | % of Portfolio".blue
 puts "----------------------------------".blue
 stocks.each do |s|
     if i < 3
-        puts "#{s[:symbol]}\t#{s[:change].to_f}\t#{(s[:change].to_f / total_percent * 100).round(-1)}".green
+        puts "#{s[:symbol]}\t#{s[:change].to_f}\t#{(s[:change].to_f / total_percent * 100).round.to_i}".green
     else
         puts "#{s[:symbol]}\t#{s[:change].to_f}"
     end
