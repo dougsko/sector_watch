@@ -4,6 +4,7 @@ require "bundler/setup"
 require "sector_watch"
 require 'date'
 require 'colorize'
+require 'csv'
 
 sectors = {'FTEC' => 'Information Technology',
            'FNCL' => 'Financials',
@@ -17,44 +18,26 @@ sectors = {'FTEC' => 'Information Technology',
            'FMAT' => 'Materials',
            'FCOM' => 'Telecommunication'}
 
-
-start_date = Date.today.prev_month(3).strftime("%m-%d-%Y")
-end_date = Date.today.strftime("%m-%d-%Y")
+#=begin
+sectors = {}
+CSV.foreach("data/sp500_companies.csv", :headers => true) do |row|
+    sectors[row[0]] = row[1]
+end
+#=end
 
 stocks = []
-sectors.each do |symbol, name|
-    stock = SectorWatch::Stock.quote(symbol, start_date, end_date, 'json')
-    stocks << stock
-end
+months = [1, 3, 6, 9, 12]
 
-stocks.each do |stock|
-    change = SectorWatch::Stock.calc_change(stock)
-    stock[:change] = change
-end
-
-stocks.sort_by!{ |stock| stock[:change].to_f}.reverse!
-
-# find and print S&P 500 10 month simple moving average
-stock = SectorWatch::Stock.sma('SPY', 10)
-
-# print results
-i = 0
-total_percent = 0
-top_three = stocks.first(3)
-top_three.each do |s|
-    total_percent += s[:change].to_f
-end
-
-puts "Comparing 3 Month Performance".yellow
-puts "Symbol | % Change | % of Portfolio".blue
-puts "----------------------------------".blue
-stocks.each do |s|
-    if i < 3
-        puts "#{s[:symbol]}\t#{s[:change].to_f}\t#{(s[:change].to_f / total_percent * 100).round.to_i}".green
-    else
-        puts "#{s[:symbol]}\t#{s[:change].to_f}"
+begin
+    sectors.each do |symbol, name|
+        puts "Getting #{symbol}..."
+        stock = SectorWatch::Stock.performance(symbol, months)
+        stocks << stock
     end
-    i += 1
+rescue Exception => msg 
+    puts msg
 end
+
+SectorWatch::Stock.print_results(stocks, months)
 
 
