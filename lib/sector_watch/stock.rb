@@ -4,6 +4,18 @@ require 'json'
 
 module SectorWatch
     class Stock
+        SECTORS = ["Industrials",
+                   "Health Care",
+                   "Information Technology",
+                   "Consumer Discretionary",
+                   "Utilities",
+                   "Financials",
+                   "Materials",
+                   "Consumer Staples",
+                   "Real Estate",
+                   "Energy",
+                   "Telecommunications Services"]
+
         def self.quote(symbol, startdate=nil, enddate=nil, format= nil)
             url = "https://finance.google.com/finance#{!!(startdate || enddate) ? '/historical' : ''}"
             params = {}
@@ -56,70 +68,51 @@ module SectorWatch
                 total += history[:close].to_f
             end
             sma = sprintf('%.2f', total / stock[:history].size).to_f
-            if stock[:history].first[:close].to_f > sma
-                puts "10 Month Moving Average".blue
-                puts "#{symbol} is trading above SMA #{stock[:history].first[:close]} > #{sma}".green
-            else
-                puts "#{symbol} is trading below SMA #{sma}" > "#{stock[:history].first[:close]}".red
-            end
-            puts
+            [sma, stock[:history].first[:close].to_f > sma]
         end
 
         def self.performance(symbol, months)
             start_date = Date.today.prev_month(months.sort.last).strftime("%m-%d-%Y")
             end_date = Date.today.strftime("%m-%d-%Y")
 
-            stock = quote(symbol, start_date, end_date, 'json')
-            stock[:changes] = []
-            new_stock = {}
-            new_stock[:history] = []
+            begin
+                stock = quote(symbol, start_date, end_date, 'json')
+                stock[:changes] = []
+                new_stock = {}
+                new_stock[:history] = []
 
-            months.each do |month|
-                start_date = Date.today.prev_month(month)#.strftime("%m-%d-%Y")
-                end_date = Date.today#.strftime("%m-%d-%Y")
+                months.each do |month|
+                    start_date = Date.today.prev_month(month)#.strftime("%m-%d-%Y")
+                    end_date = Date.today#.strftime("%m-%d-%Y")
 
-                stock[:history].each do |history|
-                    if Date.parse(history[:date]) >= start_date and Date.parse(history[:date]) < end_date
-                       new_stock[:history] << history
-                    end
-                end 
-                change = calc_change(new_stock)
-                stock[:changes] << change
+                    stock[:history].each do |history|
+                        if Date.parse(history[:date]) >= start_date and Date.parse(history[:date]) <= end_date
+                            new_stock[:history] << history
+                        end
+                    end 
+                    change = calc_change(new_stock)
+                    stock[:changes] << change
+                end
+                stock[:changes].map!{|change| change.to_f}
+                stock[:performance] = stock[:changes].reduce(:+).to_f / stock[:changes].size.to_f
+                stock
+            rescue Exception => e
+                #puts e.backtrace
+                #puts caller.join("\n")
             end
-            stock[:changes].map!{|change| change.to_f}
-            stock[:performance] = stock[:changes].reduce(:+).to_f / stock[:changes].size.to_f
-            stock
         end
 
-        def self.print_results(stocks, months)
-            stocks.sort_by!{ |stock| stock[:performance].to_f}.reverse!
-
-            # find and print S&P 500 10 month simple moving average
-            stock = SectorWatch::Stock.sma('SPY', 10)
+        def self.print_results(stocks, num_results)
+            stocks.compact!
+            stocks.sort_by!{ |stock| stock[:performance].to_f }.reverse!
 
             # print results
-            i = 0
-            total_percent = 0
-            top_three = stocks.first(3)
-            top_three.each do |s|
-                total_percent += s[:performance].to_f
-            end
-
-            puts "Comparing #{months.join(', ')} Month Performance".yellow
-            puts "Symbol | % Change | % of Portfolio".blue
-            puts "----------------------------------".blue
-            stocks.first(15).each do |s|
-                if i < 3
-                    puts "#{s[:symbol]}\t#{s[:performance].to_f.round(2)}\t#{(s[:performance].to_f / total_percent * 100).round.to_i}".green
-                else
-                    puts "#{s[:symbol]}\t#{s[:performance].to_f.round(2)}"
-                end
-                i += 1
+            stocks.first(num_results).each do |s|
+                sma_check = SectorWatch::Stock.sma(s[:symbol], 10)
+                color = ColorizedString.colors[SECTORS.reverse.index(s[:sector])]
+                print "*" if ! sma_check[1]
+                puts "#{s[:symbol]}\t#{s[:performance].to_f.round(2)}\t#{s[:sector]}".colorize(color)
             end
         end
-
-
-
-
     end
 end

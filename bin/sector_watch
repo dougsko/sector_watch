@@ -4,40 +4,79 @@ require "bundler/setup"
 require "sector_watch"
 require 'date'
 require 'colorize'
+require 'colorized_string'
 require 'csv'
 
-sectors = {'FTEC' => 'Information Technology',
-           'FNCL' => 'Financials',
-           'FHLC' => 'Health Care',
-           'FENY' => 'Energy',
-           'FREL' => 'Real Estate',
-           'FIDU' => 'Industrials',
-           'FUTY' => 'Utilities',
-           'FDIS' => 'Consumer Discretionary',
-           'FSTA' => 'Consumer Staples',
-           'FMAT' => 'Materials',
-           'FCOM' => 'Telecommunication'}
+sector_indexes = [{:symbol => 'FTEC', :sector => 'Information Technology'},
+             {:symbol => 'FNCL', :sector => 'Financials'},
+             {:symbol => 'FHLC', :sector => 'Health Care'},
+             {:symbol => 'FENY', :sector => 'Energy'},
+             {:symbol => 'FREL', :sector => 'Real Estate'},
+             {:symbol => 'FIDU', :sector => 'Industrials'},
+             {:symbol => 'FUTY', :sector => 'Utilities'},
+             {:symbol => 'FDIS', :sector => 'Consumer Discretionary'},
+             {:symbol => 'FSTA', :sector => 'Consumer Staples'},
+             {:symbol => 'FMAT', :sector => 'Materials'},
+             {:symbol => 'FCOM', :sector => 'Telecommunication'}]
 
-#=begin
-sectors = {}
+company_sector = {}
+companies = []
 CSV.foreach("data/sp500_companies.csv", :headers => true) do |row|
-    sectors[row[0]] = row[1]
+    companies << {:symbol => row["Symbol"], :name => row["Name"], :sector => row["Sector"]}
+    company_sector[row["Symbol"]] = row["Sector"]
 end
-#=end
 
 stocks = []
 months = [1, 3, 6, 9, 12]
 
+# find and print S&P 500 10 month simple moving average
+sma_check = SectorWatch::Stock.sma('SPY', 10)
+if sma_check[1]
+    puts "SPY is trading above SMA(10) #{sma_check[0]}".green
+else
+    puts "SPY is trading below SMA(10) #{sma_check[0]}".red
+end
+
+# print out sector performance
+##############################
 begin
-    sectors.each do |symbol, name|
-        puts "Getting #{symbol}..."
-        stock = SectorWatch::Stock.performance(symbol, months)
+    sector_indexes.each do |company|
+        stock = SectorWatch::Stock.performance(company[:symbol], months)
+        stock[:sector] = company[:sector]
         stocks << stock
     end
 rescue Exception => msg 
-    puts msg
+    #puts msg
 end
 
-SectorWatch::Stock.print_results(stocks, months)
+puts "Sectors".yellow
+puts "#################".yellow
+SectorWatch::Stock.print_results(stocks, 3)
+puts
+
+# print out top stocks from each sector
+#######################################
+top_stocks = []
+SectorWatch::Stock::SECTORS.each do |sector|
+    stocks = []
+    begin
+        companies.each do |company|
+            if company[:sector] == sector
+                stock = SectorWatch::Stock.performance(company[:symbol], months)
+                stock[:sector] = sector
+                stocks << stock
+            end
+        end
+    rescue Exception => e 
+        #puts e
+    end
+    stocks.compact!
+    stocks.sort_by!{ |stock| stock[:performance].to_f }.reverse!
+    top_stocks << stocks.first
+end
+
+puts "Top Stocks".yellow
+puts "#################".yellow
+SectorWatch::Stock.print_results(top_stocks, 5)
 
 
