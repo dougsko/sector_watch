@@ -26,6 +26,12 @@ CSV.foreach("data/sp500_companies.csv", :headers => true) do |row|
     company_sector[row["Symbol"]] = row["Sector"]
 end
 
+etfs = []
+CSV.foreach("data/etfs.csv", :headers => true) do |row|
+    etfs << {:symbol => row["Symbol"], :name => row["Name"]}
+end
+
+
 stocks = []
 months = [1, 3, 6, 9, 12]
 
@@ -51,8 +57,26 @@ end
 
 puts "Sectors".yellow
 puts "#################".yellow
-SectorWatch::Stock.print_results(stocks, 3)
+SectorWatch::Stock.print_results(stocks, 10)
 puts
+
+# print out ETF performance
+##############################
+begin
+    etfs.each do |etf|
+        stock = SectorWatch::Stock.performance(etf[:symbol], months)
+        stocks << stock
+    end
+rescue Exception => msg 
+    #puts msg
+end
+
+puts "ETFs".yellow
+puts "#################".yellow
+SectorWatch::Stock.print_results(stocks, 10)
+puts
+
+
 
 # print out top stocks from each sector
 #######################################

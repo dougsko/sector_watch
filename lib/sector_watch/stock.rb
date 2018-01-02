@@ -107,9 +107,10 @@ module SectorWatch
             stocks.sort_by!{ |stock| stock[:performance].to_f }.reverse!
 
             # print results
+            color = 'white'
             stocks.first(num_results).each do |s|
                 sma_check = SectorWatch::Stock.sma(s[:symbol], 10)
-                color = ColorizedString.colors[SECTORS.reverse.index(s[:sector])]
+                color = ColorizedString.colors[SECTORS.reverse.index(s[:sector])] if s[:sector]
                 print "*" if ! sma_check[1]
                 puts "#{s[:symbol]}\t#{s[:performance].to_f.round(2)}\t#{s[:sector]}".colorize(color)
             end
