@@ -6,6 +6,7 @@ require 'date'
 require 'colorize'
 require 'colorized_string'
 require 'csv'
+require 'parallel'
 
 sector_indexes = [{:symbol => 'FTEC', :sector => 'Information Technology'},
              {:symbol => 'FNCL', :sector => 'Financials'},
@@ -46,7 +47,7 @@ end
 # print out sector performance
 ##############################
 begin
-    sector_indexes.each do |company|
+    Parallel.each(sector_indexes, in_threads: sector_indexes.size) do |company|
         stock = SectorWatch::Stock.performance(company[:symbol], months)
         stock[:sector] = company[:sector]
         stocks << stock
@@ -62,8 +63,9 @@ puts
 
 # print out ETF performance
 ##############################
+stocks = []
 begin
-    etfs.each do |etf|
+    Parallel.each(etfs, in_threads: etfs.size) do |etf|
         stock = SectorWatch::Stock.performance(etf[:symbol], months)
         stocks << stock
     end
@@ -84,7 +86,7 @@ top_stocks = []
 SectorWatch::Stock::SECTORS.each do |sector|
     stocks = []
     begin
-        companies.each do |company|
+        Parallel.each(companies, in_threads: 20) do |company|
             if company[:sector] == sector
                 stock = SectorWatch::Stock.performance(company[:symbol], months)
                 stock[:sector] = sector

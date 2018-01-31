@@ -8,3 +8,4 @@ gemspec
 
 gem 'stock_quote'
 gem 'colorize'
+gem 'parallel'
